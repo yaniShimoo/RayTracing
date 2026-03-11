@@ -14,23 +14,25 @@ int main()
 {
 	srand(time(NULL));
 
+#pragma region SceneObjects
 	Ring ring(
-		0.95f,
-		1.5f,
-		normalize(vector3(0.5f, 1, -0.35f)),
+		0.8f,
+		1.3f,
+		normalize(vector3(0.1f, 1, -0.25f)),
 		vector3());
 
 
 	Sphere planet(.6f, vector3());
 
 	Sphere moon1(
-		.1f,
-		vector3(0.8f, 0.2f, -3),
+		.2f,
+		vector3(.3f, .3f, -1),
 		1,
-		(1 + rand() % 20) * 0.0001f,
+		0.001f,
+		//(1 + rand() % 20) * 0.0001f,
 		1,
-		0.5f,
-		-5
+		0.45f,
+		4
 	);
 	Sphere moon2(
 		.05f,
@@ -38,8 +40,8 @@ int main()
 		2,
 		(1 + rand() % 20) * 0.0001f,
 		2,
-		-0.1f,
-		3
+		-0.9f,
+		-7
 	);
 	Sphere moon3(
 		.085f,
@@ -48,7 +50,7 @@ int main()
 		(1 + rand() % 20) * 0.0001f,
 		1.5f,
 		-0.8f,
-		2.5f
+		-3
 	);
 	Sphere moon4(
 		.065f,
@@ -57,19 +59,19 @@ int main()
 		(1 + rand() % 20) * 0.0001f,
 		1.25f,
 		0.65f,
-		-6
+		-2
 	);
 
-	const int SPHERE_ARR_LENGTH = 5;
+	const int SPHERE_ARR_LENGTH = 2;
 	//список сфер для рендера
 	Sphere spheres[SPHERE_ARR_LENGTH] = {
 		planet,
 		moon1,
-		moon2,
-		moon3,
-		moon4
+		//moon2,
+		//moon3,
+		//moon4
 	};
-
+#pragma endregion SceneObjects
 	//размер консоли (экран)
 	const int width = 120, height = 30;
 	//пиксели на экране
@@ -87,11 +89,13 @@ int main()
 	int gradSize = size(grad) - 2;
 
 	float u, v;
-	vector3 lightDir = normalize(vector3(2, 1, -2));
+	vector3 lightDir = vector3(5, 3, -5);
 
-	for (int t = 0; t < 80000; t++)
+	for (int t = 0; t < 5000; t++)
 	{
-		for (int i = 1; i < SPHERE_ARR_LENGTH; i++)
+		lightDir = vector3(sin(t * 0.001f) * 15, 3, -5);
+		//lightDir = vector3(5, 3, 0.5f + sin(t * 0.005f));
+		/*for (int i = 1; i < SPHERE_ARR_LENGTH; i++)
 		{
 			float angle = t * spheres[i].getOrbitSpeed();
 			spheres[i].setPosition(
@@ -101,6 +105,7 @@ int main()
 					spheres[0].getPosition().z + sin(angle) * spheres[i].getTiltZ()
 				));
 		}
+		*/
 		for (int y = 0; y < height; y++)
 		{
 			for (int x = 0; x < width; x++)
@@ -125,7 +130,7 @@ int main()
 				int color = 0;
 
 				float closestT = 99999;
-				short hitType = -1;
+				HitType hitType = None;
 				short hitIndex = -1;
 				float tHit;
 				for (int k = 0; k < SPHERE_ARR_LENGTH; k++)
@@ -134,7 +139,7 @@ int main()
 						if (tHit < closestT) {
 							closestT = tHit;
 							hitIndex = k;
-							hitType = 0;
+							hitType = SphereType;
 						}
 					}
 				}
@@ -142,37 +147,64 @@ int main()
 				if (ringIntersect(camPos, normalizedRayDir, ring, tHit)) {
 					if (tHit < closestT) {
 						closestT = tHit;
-						hitType = 1;
+						hitType = RingType;
 					}
 				}
 
-				if (hitType == 0) {
+				bool isShadow = false;
+
+				if (hitType == SphereType) {
 					//точка на координатах, куда попал луч (если т существует)
 					vector3 hitPoint = camPos + normalizedRayDir * closestT;
 
-					//Это вектор, направленный наружу сферы
+					//Это нормализованный вектор, направленный наружу сферы
 					vector3 normal = normalize(hitPoint - spheres[hitIndex].getPosition());
 
+					//тени
+					vector3 shadowOrigin = hitPoint + normal * 0.001f;
+					if (shadowIntersect(hitPoint, normal, lightDir, spheres, SPHERE_ARR_LENGTH, ring))
+						isShadow = true;
+
+					//Яркость точки попадания
 					float brightness = dot(normal, lightDir);
 					if (brightness < 0)
 						brightness = 0;
 
 					// Добавляем глубину пространства
 					float ambient = 0.15f;
-					brightness = fmax(0, brightness);
-					brightness = ambient + (1.0f - ambient) * brightness;
-					float depthFactor = clamp(1 - (closestT / 12), 0, 1);
-					float finalRender = brightness * depthFactor;
+					float diffuse = fmax(0, brightness);
 
-					color = (int)(finalRender * 20);
+					float finalRender;
+
+					if (isShadow)
+						finalRender = 0;
+					else
+					{
+						brightness = ambient + (1.0f - ambient) * diffuse;
+						float depthFactor = clamp(1 - (closestT / 12), 0, 1);
+						finalRender = brightness * depthFactor;
+					}
+
+					color = (int)(finalRender * 5);
 
 				}
-				else if (hitType == 1)
+				else if (hitType == RingType)
 				{
-					float brightness = abs(dot(ring.getNormal(), lightDir));
-					float depthFactor = clamp(1 - (tHit / 12), 0, 1);
-					float finalRender = brightness * depthFactor;
-					color = (int)(finalRender * 35);
+					vector3 hitPoint = camPos + normalizedRayDir * closestT;
+					if (shadowIntersect(hitPoint, ring.getNormal(), lightDir, spheres, SPHERE_ARR_LENGTH, ring))
+						isShadow = true;
+
+					float finalRender;
+					if (isShadow)
+						finalRender = 0;
+					else
+					{
+						float brightness = abs(dot(ring.getNormal(), lightDir));
+						float depthFactor = clamp(1 - (tHit / 12), 0, 1);
+						finalRender = brightness * depthFactor;
+					}
+
+					color = (int)(finalRender * 5);
 				}
 				else {
 					char pix = ' ';
@@ -184,7 +216,6 @@ int main()
 				}
 				color = clamp(color, 0, gradSize);
 				*(screen + (int)(y * width) + x) = grad[color];
-				//cout << *(screen + (y * width) + x);
 			}
 		}
 		//"\033[36m

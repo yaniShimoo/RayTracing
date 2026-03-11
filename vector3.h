@@ -15,16 +15,16 @@ public:
 		y = 0;
 		z = 0;
 	}
-	vector3 operator + (vector3 const& coll) {
+	const vector3& operator + (vector3 const& coll) const {
 		return vector3(x + coll.x, y + coll.y, z + coll.z);
 	}
-	vector3 operator - (vector3 const& coll) {
+	const vector3& operator - (vector3 const& coll) const {
 		return vector3(x - coll.x, y - coll.y, z - coll.z);
 	}
 	vector3 operator * (vector3 const& coll) {
 		return vector3(x * coll.x, y * coll.y, z * coll.z);
 	}
-	vector3 operator * (float coll) {
+	const vector3& operator * (float coll) const {
 		return vector3(x * coll, y * coll, z * coll);
 	}
 	vector3 operator / (vector3 const& coll) {

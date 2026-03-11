@@ -14,7 +14,7 @@ public:
 	}
 	*/
 
-	vector3& getPosition() {
+	const vector3& getPosition() const {
 		return pos;
 	}
 

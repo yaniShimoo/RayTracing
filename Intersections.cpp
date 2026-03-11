@@ -5,7 +5,7 @@
 #include <cmath>
 #include <stdint.h>
 
-const float EPS = 0.0001f;
+const float EPS = 0.001f;
 
 float generateNoise(int x, int y) {
 	uint32_t n = x + y * 57;
@@ -17,16 +17,12 @@ float generateNoise(int x, int y) {
 }
 
 bool sphereIntersect(
-	vector3& origin,
-	vector3& rayDir,
-	SceneObject& obj,
+	vector3 const& origin,
+	vector3 const& rayDir,
+	Sphere const& sphere,
 	float& outT
 ) {
-	Sphere* s = static_cast<Sphere*>(&obj);
-	if (!s)
-		return false;
 
-	Sphere sphere = *s;
 	vector3 centre = sphere.getPosition();
 	float radius = sphere.getRadius();
 
@@ -56,23 +52,24 @@ bool sphereIntersect(
 	return true;
 }
 
-bool ringIntersect(vector3& origin,
-	vector3& rayDir,
-	SceneObject& obj,
+bool ringIntersect(vector3 const& origin,
+	vector3 const& rayDir,
+	Ring const& ring,
 	float& outT) {
 
+	/*
 	Ring* ring = dynamic_cast<Ring*>(&obj);
 	if (ring == nullptr)
 		return false;
-
+	*/
 	//не параллелен ли луч плоскости
-	float denom = dot(rayDir, ring->getNormal());
+	float denom = dot(rayDir, ring.getNormal());
 
 	if (abs(denom) < EPS)
 		return false;
 
-	vector3 toPlane = ring->getPosition() - origin;
-	float t = dot(toPlane, ring->getNormal()) / denom;
+	vector3 toPlane = ring.getPosition() - origin;
+	float t = dot(toPlane, ring.getNormal()) / denom;
 
 	if (t <= EPS)
 		return false;
@@ -81,15 +78,52 @@ bool ringIntersect(vector3& origin,
 	vector3 hitPoint = origin + rayDir * t;
 
 	//найти вектор от центра кольца до точки
-	vector3 fromCenter = hitPoint - ring->getPosition();
+	vector3 fromCenter = hitPoint - ring.getPosition();
 
 	float dist = magnitude(fromCenter);
 
-	if (dist < ring->getInner())
+	if (dist < ring.getInner())
 		return false;
-	if (dist > ring->getOuter())
+	if (dist > ring.getOuter())
 		return false;
 
 	outT = t;
 	return true;
+}
+
+bool shadowIntersect(
+	vector3 const& hitPoint,
+	vector3 const& normal,
+	vector3 const& lightPos,
+	Sphere* spheres,
+	const int size,
+	Ring const& ring
+) {
+
+	// vector to light point
+	vector3 toLight = lightPos - hitPoint;
+
+	float lightDist = magnitude(toLight);
+	vector3 shadowDir = normalize(toLight);
+
+	vector3 shadowOrigin = hitPoint + normal * EPS;
+
+	float tShadow;
+
+	/*if (ringIntersect(shadowOrigin, shadowDir, ring, tShadow)) {
+		if (tShadow > EPS && tShadow < lightDist)
+			return true;
+	}*/
+
+	for (int i = 0; i < size; i++)
+	{
+
+		if (sphereIntersect(shadowOrigin, shadowDir, *(spheres + i), tShadow)) {
+			if (tShadow > EPS && tShadow < lightDist)
+				return true;
+		}
+	}
+
+
+	return false;
 }
