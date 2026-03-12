@@ -91,9 +91,9 @@ int main()
 	float u, v;
 	vector3 lightDir = vector3(5, 3, -5);
 
-	for (int t = 0; t < 5000; t++)
+	for (int t = 0; t < 1000; t++)
 	{
-		lightDir = vector3(sin(t * 0.001f) * 15, 3, -5);
+		lightDir = vector3(sin(t * 0.005f) * 5, -3, cos(t * 0.005f) * -5);
 		//lightDir = vector3(5, 3, 0.5f + sin(t * 0.005f));
 		/*for (int i = 1; i < SPHERE_ARR_LENGTH; i++)
 		{
