@@ -25,51 +25,60 @@ int main()
 	Sphere planet(.6f, vector3());
 
 	Sphere moon1(
-		.2f,
+		.1f,
 		vector3(.3f, .3f, -1),
 		1,
-		0.001f,
-		//(1 + rand() % 20) * 0.0001f,
-		1,
-		0.45f,
-		4
+		(1 + rand() % 20) * 0.0001f,
+		1.25f,
+		0.2f,
+		-1.5f
 	);
 	Sphere moon2(
 		.05f,
 		vector3(-0.8f, -0.1f, -4),
 		2,
 		(1 + rand() % 20) * 0.0001f,
-		2,
-		-0.9f,
-		-7
+		1.30f,
+		0.55f,
+		-1.4f
 	);
 	Sphere moon3(
 		.085f,
 		vector3(0, -0.65f, 0),
 		1.5f,
 		(1 + rand() % 20) * 0.0001f,
-		1.5f,
-		-0.8f,
-		-3
+		1.65f,
+		-0.9f,
+		-1.8f
 	);
 	Sphere moon4(
 		.065f,
 		vector3(-0.42f, -0.7f, -3.5f),
 		1.25f,
 		(1 + rand() % 20) * 0.0001f,
-		1.25f,
-		0.65f,
+		1.8f,
+		-0.65f,
 		-2
 	);
+	Sphere moon5(
+		.05f,
+		vector3(-0.42f, -0.7f, -3.5f),
+		1.25f,
+		0.001f,
+		1.2f,
+		2.5f,
+		-1.1f
+	);
 
-	const int SPHERE_ARR_LENGTH = 2;
+	const int SPHERE_ARR_LENGTH = 6;
 	//список сфер для рендера
 	Sphere spheres[SPHERE_ARR_LENGTH] = {
 		planet,
 		moon1,
-		//moon2,
-		//moon3,
-		//moon4
+		moon2,
+		moon3,
+		moon4,
+		moon5
 	};
 #pragma endregion SceneObjects
 	//размер консоли (экран)
@@ -91,11 +100,11 @@ int main()
 	float u, v;
 	vector3 lightDir = vector3(5, 3, -5);
 
-	for (int t = 0; t < 1000; t++)
+	for (int t = 0; t < 10000; t++)
 	{
-		lightDir = vector3(sin(t * 0.005f) * 5, -3, cos(t * 0.005f) * -5);
-		//lightDir = vector3(5, 3, 0.5f + sin(t * 0.005f));
-		/*for (int i = 1; i < SPHERE_ARR_LENGTH; i++)
+		//движение
+		lightDir = vector3(sin(t * 0.0005f) * 5, 1.1f, cos(t * 0.0005f) * -5);
+		for (int i = 1; i < SPHERE_ARR_LENGTH; i++)
 		{
 			float angle = t * spheres[i].getOrbitSpeed();
 			spheres[i].setPosition(
@@ -105,7 +114,7 @@ int main()
 					spheres[0].getPosition().z + sin(angle) * spheres[i].getTiltZ()
 				));
 		}
-		*/
+
 		for (int y = 0; y < height; y++)
 		{
 			for (int x = 0; x < width; x++)
@@ -152,7 +161,7 @@ int main()
 				}
 
 				bool isShadow = false;
-
+				//если луч пересекся со сферой
 				if (hitType == SphereType) {
 					//точка на координатах, куда попал луч (если т существует)
 					vector3 hitPoint = camPos + normalizedRayDir * closestT;
@@ -161,7 +170,6 @@ int main()
 					vector3 normal = normalize(hitPoint - spheres[hitIndex].getPosition());
 
 					//тени
-					vector3 shadowOrigin = hitPoint + normal * 0.001f;
 					if (shadowIntersect(hitPoint, normal, lightDir, spheres, SPHERE_ARR_LENGTH, ring))
 						isShadow = true;
 
@@ -185,9 +193,10 @@ int main()
 						finalRender = brightness * depthFactor;
 					}
 
-					color = (int)(finalRender * 5);
+					color = (int)(finalRender * 20);
 
 				}
+				//если луч пересекся с кольцом
 				else if (hitType == RingType)
 				{
 					vector3 hitPoint = camPos + normalizedRayDir * closestT;
@@ -200,17 +209,21 @@ int main()
 					else
 					{
 						float brightness = abs(dot(ring.getNormal(), lightDir));
-						float depthFactor = clamp(1 - (tHit / 12), 0, 1);
+						float depthFactor = clamp(1 - (closestT / 12), 0, 1);
 						finalRender = brightness * depthFactor;
 					}
 
-					color = (int)(finalRender * 5);
+					color = (int)(finalRender * 20);
 				}
+				//луч никуда не попал
 				else {
-					char pix = ' ';
+					char pix = '`';
+
 					float noise = generateNoise(x, y);
+
 					if (noise > 0.995) pix = '*';
-					else if (noise > 0.99) pix = '.';
+					else if (noise > 0.99) pix = '+';
+
 					*(screen + (int)(y * width) + x) = pix;
 					continue;
 				}

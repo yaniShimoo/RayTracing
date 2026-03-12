@@ -57,17 +57,13 @@ bool ringIntersect(vector3 const& origin,
 	Ring const& ring,
 	float& outT) {
 
-	/*
-	Ring* ring = dynamic_cast<Ring*>(&obj);
-	if (ring == nullptr)
-		return false;
-	*/
 	//не параллелен ли луч плоскости
 	float denom = dot(rayDir, ring.getNormal());
 
 	if (abs(denom) < EPS)
 		return false;
 
+	//вектор от камеры к точке на плоскости
 	vector3 toPlane = ring.getPosition() - origin;
 	float t = dot(toPlane, ring.getNormal()) / denom;
 
@@ -110,10 +106,10 @@ bool shadowIntersect(
 
 	float tShadow;
 
-	/*if (ringIntersect(shadowOrigin, shadowDir, ring, tShadow)) {
+	if (ringIntersect(shadowOrigin, shadowDir, ring, tShadow)) {
 		if (tShadow > EPS && tShadow < lightDist)
 			return true;
-	}*/
+	}
 
 	for (int i = 0; i < size; i++)
 	{

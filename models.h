@@ -5,15 +5,6 @@ class SceneObject {
 protected:
 	vector3 pos;
 public:
-	/*
-	SceneObject() {
-		pos = vector3();
-	}
-	SceneObject(vector3 const& pos) {
-		this->pos = pos;
-	}
-	*/
-
 	const vector3& getPosition() const {
 		return pos;
 	}
